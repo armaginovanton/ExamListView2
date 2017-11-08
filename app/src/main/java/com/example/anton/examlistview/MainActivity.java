@@ -1,9 +1,17 @@
 package com.example.anton.examlistview;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 import com.example.anton.examlistview.adapter.PersonAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -18,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
 
+    final Context context = this;
     private ListView listView;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -32,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
         task.execute();
 
-        List<Person> personList = new ArrayList<Person>();
+        final List<Person> personList = new ArrayList<Person>();
 
         try {
             resultJson = task.get();
@@ -74,6 +83,49 @@ public class MainActivity extends AppCompatActivity {
 
         PersonAdapter adapter = new PersonAdapter(this, personList);
         listView.setAdapter(adapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    final int position, long id) {
+
+                LayoutInflater li = LayoutInflater.from(context);
+                View promptsView = li.inflate(R.layout.promt, null);
+
+                AlertDialog.Builder mDialogBuilder = new AlertDialog.Builder(context);
+
+                mDialogBuilder.setView(promptsView);
+
+                final EditText userInput = (EditText) promptsView.findViewById(R.id.input_text);
+
+                mDialogBuilder
+                        .setCancelable(false)
+                        .setPositiveButton("OK",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        if (userInput.getText().length()>1){
+                                            Person person = personList.get(position);
+                                            person.setName(userInput.getText().toString());
+                                            personList.set(position,person);
+                                        } else {
+                                            Toast toast = Toast.makeText(getApplicationContext(),
+                                                    "Имя должно состоять более чем из одного символа", Toast.LENGTH_LONG);
+                                            toast.show();
+                                        }
+                                    }
+                                })
+                        .setNegativeButton("Отмена",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        dialog.cancel();
+                                    }
+                                });
+
+                AlertDialog alertDialog = mDialogBuilder.create();
+
+                alertDialog.show();
+
+            }
+        });
 
     }
 
